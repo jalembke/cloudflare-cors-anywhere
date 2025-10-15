@@ -16,7 +16,7 @@ The main goal is to facilitate cross-origin requests while enforcing specific se
 // Configuration: Whitelist and Blacklist (not used in this version)
 // whitelist = [ "^http.?://www.zibri.org$", "zibri.org$", "test\\..*" ];  // regexp for whitelisted urls
 const blacklistUrls = [];           // regexp for blacklisted urls
-const whitelistOrigins = [ ".*" ];   // regexp for whitelisted origins
+const whitelistOrigins = [ "^http.?://localhost",  "^https://msoe-lembke.gitlab.io$" ];   // regexp for whitelisted origins
 
 // Function to check if a given URI or origin is listed in the whitelist or blacklist
 function isListedInWhitelist(uri, listing) {
@@ -103,7 +103,7 @@ addEventListener("fetch", async event => {
                     allResponseHeaders[key] = value;
                 }
                 exposedHeaders.push("cors-received-headers");
-                responseHeaders = setupCORSHeaders(responseHeaders);
+                setupCORSHeaders(responseHeaders);
 
                 responseHeaders.set("Access-Control-Expose-Headers", exposedHeaders.join(","));
                 responseHeaders.set("cors-received-headers", JSON.stringify(allResponseHeaders));
@@ -119,29 +119,8 @@ addEventListener("fetch", async event => {
 
             } else {
                 const responseHeaders = new Headers();
-                responseHeaders = setupCORSHeaders(responseHeaders);
-
-                let country = false;
-                let colo = false;
-                if (typeof event.request.cf !== "undefined") {
-                    country = event.request.cf.country || false;
-                    colo = event.request.cf.colo || false;
-                }
-
-                return new Response(
-                    "CLOUDFLARE-CORS-ANYWHERE\n\n" +
-                    "Source:\nhttps://github.com/Zibri/cloudflare-cors-anywhere\n\n" +
-                    "Usage:\n" +
-                    originUrl.origin + "/?uri\n\n" +
-                    "Donate:\nhttps://paypal.me/Zibri/5\n\n" +
-                    "Limits: 100,000 requests/day\n" +
-                    "          1,000 requests/10 minutes\n\n" +
-                    (originHeader !== null ? "Origin: " + originHeader + "\n" : "") +
-                    "IP: " + connectingIp + "\n" +
-                    (country ? "Country: " + country + "\n" : "") +
-                    (colo ? "Datacenter: " + colo + "\n" : "") +
-                    "\n" +
-                    (customHeaders !== null ? "\nx-cors-headers: " + JSON.stringify(customHeaders) : ""),
+                setupCORSHeaders(responseHeaders);
+                return new Response(null,
                     {
                         status: 200,
                         headers: responseHeaders
@@ -149,17 +128,10 @@ addEventListener("fetch", async event => {
                 );
             }
         } else {
-            return new Response(
-                "Create your own CORS proxy</br>\n" +
-                "<a href='https://github.com/Zibri/cloudflare-cors-anywhere'>https://github.com/Zibri/cloudflare-cors-anywhere</a></br>\n" +
-                "\nDonate</br>\n" +
-                "<a href='https://paypal.me/Zibri/5'>https://paypal.me/Zibri/5</a>\n",
+            return new Response(null,
                 {
                     status: 403,
-                    statusText: 'Forbidden',
-                    headers: {
-                        "Content-Type": "text/html"
-                    }
+                    statusText: 'Forbidden'
                 }
             );
         }
